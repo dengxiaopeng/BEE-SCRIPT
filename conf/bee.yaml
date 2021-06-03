@@ -1,0 +1,15 @@
+api-addr: :1633
+clef-signer-enable: true
+clef-signer-endpoint: /var/lib/bee-clef/clef.ipc
+data-dir: /data/bee
+db-open-files-limit: 400
+debug-api-addr: 127.0.0.1:1635
+debug-api-enable: true
+full-node: true
+p2p-addr: :1634
+nat-addr: "119.13.89.55:1634"
+password: "ZdORZ1N71NcWoT5NMUbSQEnHL-gv360q"
+swap-enable: true
+swap-endpoint: wss://goerli.infura.io/ws/v3/41dc108a787a43e58268d088f35b2654
+swap-initial-deposit: 10000000000000000
+welcome-message: "dpbee"
