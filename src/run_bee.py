@@ -19,6 +19,13 @@ def getPublicIp():
         return ipAddress.text
 
 
+def getYamlValue(key,bee,defaultValue):
+    if key in bee:
+        return bee[key]
+    else:
+        return defaultValue
+
+
 def mkBeeDataFiles(nodeCount:int):
     raw_yaml = os.path.join(CONF_PATH,'bee.yaml')
     if not os.path.exists(raw_yaml):
@@ -28,14 +35,15 @@ def mkBeeDataFiles(nodeCount:int):
         shutil.rmtree(YAMLS_PATH)
     with open(raw_yaml,encoding='utf-8') as f:
         temp = yaml.load(f.read())
-        api_addr = 1633
-        p2p_addr = 1634
-        debug_api_addr = 1635
-        dataDir = '/data/'
+        api_addr = getYamlValue('api-addr',temp,1633)
+        p2p_addr = api_addr + 1
+        debug_api_addr = api_addr + 2
+        dataDir = getYamlValue('data-dir',temp,'/data/')
         nat_addr = getPublicIp() + ':'
         gap = 10
-        if not os.path.exists(YAMLS_PATH):os.mkdir(YAMLS_PATH)
-        
+        welcomeMsg = getYamlValue('welcome-message',temp,'dpbee')
+
+        if not os.path.exists(YAMLS_PATH): os.mkdir(YAMLS_PATH)
         for i in range(nodeCount):
             temp['api-addr'] = ':'+str(api_addr + i*gap)
             temp['config'] = dataDir + 'bee'+str(i)+'/'+ 'bee.yaml'
@@ -43,7 +51,7 @@ def mkBeeDataFiles(nodeCount:int):
             temp['p2p-addr'] = ':'+str(p2p_addr + i*gap)
             temp['debug-api-addr'] = '127.0.0.1:'+str(debug_api_addr + i*gap)
             temp['nat-addr'] = nat_addr + str(p2p_addr + i*gap)
-            temp['welcome-message'] = "dpbee" + "%03d"%(i)
+            temp['welcome-message'] = welcomeMsg + "%03d"%(i)
             output_path = os.path.join(YAMLS_PATH,'bee'+str(i)+'.yaml')
             with open(output_path,mode='w',encoding='utf-8') as b:
                 yaml.dump(temp,b)
@@ -52,17 +60,58 @@ def mkBeeDataFiles(nodeCount:int):
     print("finish generate %d yamls"%(nodeCount))
     
 
-def startBees():
+def getYamls():
     if not os.path.exists(YAMLS_PATH):
         print('create conf file frist.')
-        return
+        return []
     yamls = []
     for y in os.listdir(YAMLS_PATH):
         if y.endswith('.yaml'):
             yamls.append(os.path.join(YAMLS_PATH,y))
     if len(yamls) == 0:
         print('init conf file frist.')
-        return
+        return []
+    return yamls
+
+
+def getPidFromFile(pidfile):
+    #check pid is running
+    checkcmd = 'ps -p {pid:d}|grep {pid:d}'
+    if os.path.exists(pidfile):
+        with open(pidfile) as pfile:
+            pid = pfile.read()
+            try:
+                pid = int(pid)
+            except:
+                pid = -1
+        if pid != -1:
+            ret = os.popen(checkcmd.format(checkcmd.format(pid,pid)))
+            if not ret.read().__contains__(str(pid)):
+                pid = -1
+    else:
+        pid = -1
+
+    return pid
+
+
+def killBees():
+    yamls = getYamls()
+    for bee in yamls:
+        temp = open(bee,encoding='utf-8')
+        bee_yaml = yaml.load(temp.read())
+        temp.close()
+        data_dir = bee_yaml['data-dir']
+        pidfile = data_dir + '/pid.txt'
+        pid = getPidFromFile(pidfile)
+        if pid != -1:
+            os.popen('kill -9 '+str(pid))
+        
+    print("close bee %d all"%(len(yamls)))
+
+
+def startBees():
+    yamls = getYamls()
+
     bee_sh = "nohup bee start --config {config_file:s} >> {output_file:s} 2>&1 < /dev/null & echo $! > {pidfile:s}"
     
     for bee in yamls:
@@ -73,6 +122,7 @@ def startBees():
         data_dir = bee_yaml['data-dir']
         output_file = data_dir + '/output.log'
         pidfile = data_dir + '/pid.txt'
+        if getPidFromFile(pidfile) != -1 : continue
         if not os.path.exists(data_dir): os.makedirs(data_dir)
         shutil.copy(bee,config_file)
         excute_bee_sh = bee_sh.format(config_file=config_file,output_file=output_file,pidfile=pidfile)
@@ -90,6 +140,7 @@ def printHelp():
     print('Usage run_bee.py [OPTION]')
     print()
     print('  -c, --create\tcreate N peers conf')
+    print('  -k, --kill\tkill all peers')
     print('  -s, --start\tstart all peers')
     print()
     print('Examples:')
@@ -103,7 +154,7 @@ def printHelp():
 def main(argv):
     import getopt
     try:
-        opts, args = getopt.getopt(argv,"hc:s",["help","create","start"])
+        opts, args = getopt.getopt(argv,"hc:sk",["help","create","start","kill"])
     except getopt.GetoptError:
         printHelp()
         sys.exit(1)
@@ -123,6 +174,8 @@ def main(argv):
                 sys.exit(2)
         elif opt in ('-s','--create'):
             startBees()
+        elif opt in ('-k','--kill'):
+            killBees()
 
 
 if __name__ == '__main__':

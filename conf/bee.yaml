@@ -1,7 +1,7 @@
 api-addr: :1633
 clef-signer-enable: true
 clef-signer-endpoint: /var/lib/bee-clef/clef.ipc
-data-dir: /data/bee
+data-dir: /data/
 db-open-files-limit: 400
 debug-api-addr: 127.0.0.1:1635
 debug-api-enable: true
