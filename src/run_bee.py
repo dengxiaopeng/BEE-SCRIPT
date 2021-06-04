@@ -23,7 +23,8 @@ def mkBeeDataFiles(nodeCount:int):
     if not os.path.exists(raw_yaml):
         print("check ../conf/bee.yaml is exits?")
         return
-    shutil.rmtree(YAMLS_PATH)
+    if os.path.exists(YAMLS_PATH):
+        shutil.rmtree(YAMLS_PATH)
     with open(raw_yaml,encoding='utf-8') as f:
         temp = yaml.load(f.read(),Loader=yaml.FullLoader)
         api_addr = 1633
