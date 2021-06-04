@@ -31,7 +31,7 @@ def mkBeeDataFiles(nodeCount:int):
         api_addr = 1633
         p2p_addr = 1634
         debug_api_addr = 1635
-        dataDir = '/data/data/'
+        dataDir = '/data/'
         nat_addr = getPublicIp() + ':'
         gap = 10
         if not os.path.exists(YAMLS_PATH):os.mkdir(YAMLS_PATH)
@@ -73,7 +73,7 @@ def startBees():
         data_dir = bee_yaml['data-dir']
         output_file = data_dir + '/output.log'
         pidfile = data_dir + '/pid.txt'
-        if not os.path.exists(data_dir): os.mkdir(data_dir)
+        if not os.path.exists(data_dir): os.makedirs(data_dir)
         shutil.copy(bee,config_file)
         excute_bee_sh = bee_sh.format(config_file=config_file,output_file=output_file,pidfile=pidfile)
         ret = os.popen(excute_bee_sh)
