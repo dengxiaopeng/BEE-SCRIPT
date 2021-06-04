@@ -5,6 +5,7 @@ import shutil
 import sys
 from GLOBAL import *
 
+yaml.__with_libyaml__ = False
 
 def getPublicIp():
     insideUrl = "http://ip.42.pl/raw"
@@ -26,7 +27,7 @@ def mkBeeDataFiles(nodeCount:int):
     if os.path.exists(YAMLS_PATH):
         shutil.rmtree(YAMLS_PATH)
     with open(raw_yaml,encoding='utf-8') as f:
-        temp = yaml.load(f.read(),Loader=yaml.FullLoader)
+        temp = yaml.load(f.read())
         api_addr = 1633
         p2p_addr = 1634
         debug_api_addr = 1635
@@ -66,7 +67,7 @@ def startBees():
     
     for bee in yamls:
         temp = open(bee,encoding='utf-8')
-        bee_yaml = yaml.load(temp.read(),Loader=yaml.FullLoader)
+        bee_yaml = yaml.load(temp.read())
         temp.close()
         config_file = bee_yaml['config']
         data_dir = bee_yaml['data-dir']
