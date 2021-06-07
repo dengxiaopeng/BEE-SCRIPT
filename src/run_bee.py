@@ -1,12 +1,19 @@
+#! /usr/bin/python3
+
 import time
 import yaml
 import requests
 import os
-import shutil
 import sys
 import json
-from GLOBAL import *
+from pathlib import Path
 
+if __package__ is None:                  
+    DIR = Path(__file__).resolve().parent
+    sys.path.insert(0, str(DIR.parent))
+    __package__ = DIR.name
+
+from .GLOBAL import *
 
 if hasattr(yaml,'_warnings_enabled'):
     yaml._warnings_enabled['YAMLLoadWarning'] = False
