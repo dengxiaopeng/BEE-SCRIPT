@@ -1,4 +1,5 @@
 /conf/yamls
 /conf/yamls/*
+/conf/*.json
 
 *__pycache__*

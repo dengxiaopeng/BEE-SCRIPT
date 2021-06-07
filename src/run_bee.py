@@ -1,11 +1,13 @@
+import time
 import yaml
 import requests
 import os
 import shutil
 import sys
+import json
 from GLOBAL import *
 
-yaml.__with_libyaml__ = False
+yaml._warnings_enabled['YAMLLoadWarning'] = False
 
 def getPublicIp():
     insideUrl = "http://ip.42.pl/raw"
@@ -26,52 +28,50 @@ def getYamlValue(key,bee,defaultValue):
         return defaultValue
 
 
-def mkBeeDataFiles(nodeCount:int):
+def mkBeeDataFiles(nodeCount:int,dataPath:str=None):
+    if not os.path.exists(CONF_PATH):
+        os.makedirs(CONF_PATH)
     raw_yaml = os.path.join(CONF_PATH,'bee.yaml')
     if not os.path.exists(raw_yaml):
         print("check ../conf/bee.yaml is exits?")
         return
-    if os.path.exists(YAMLS_PATH):
-        shutil.rmtree(YAMLS_PATH)
     with open(raw_yaml,encoding='utf-8') as f:
         temp = yaml.load(f.read())
         api_addr = getYamlValue('api-addr',temp,1633)
+        api_addr = int(api_addr[1:]) if isinstance(api_addr,str) else api_addr
         p2p_addr = api_addr + 1
         debug_api_addr = api_addr + 2
-        dataDir = getYamlValue('data-dir',temp,'/data/')
+        dataDir = getYamlValue('data-dir',temp,'/data/') if dataPath is None else dataPath
         nat_addr = getPublicIp() + ':'
-        gap = 10
         welcomeMsg = getYamlValue('welcome-message',temp,'dpbee')
+        gap = 10
+        ret = {}
+        ret['dataDir'] = dataDir
+        ret['peers'] = []
 
-        if not os.path.exists(YAMLS_PATH): os.mkdir(YAMLS_PATH)
         for i in range(nodeCount):
             temp['api-addr'] = ':'+str(api_addr + i*gap)
-            temp['config'] = dataDir + 'bee'+str(i)+'/'+ 'bee.yaml'
-            temp['data-dir'] = dataDir + 'bee'+str(i)
+            temp['config'] = os.path.join(dataDir,'bee'+str(i),'bee.yaml')
+            temp['data-dir'] = os.path.join(dataDir,'bee'+str(i))
             temp['p2p-addr'] = ':'+str(p2p_addr + i*gap)
             temp['debug-api-addr'] = '127.0.0.1:'+str(debug_api_addr + i*gap)
             temp['nat-addr'] = nat_addr + str(p2p_addr + i*gap)
             temp['welcome-message'] = welcomeMsg + "%03d"%(i)
-            output_path = os.path.join(YAMLS_PATH,'bee'+str(i)+'.yaml')
-            with open(output_path,mode='w',encoding='utf-8') as b:
-                yaml.dump(temp,b)
-            print(temp)
-            print()
+            ret['peers'].append(temp.copy())
+            print("%d config file generated." % (i+1))
+    outputJson = "bee_%d_%s.json" %(nodeCount,time.strftime("%Y_%m_%d_%H_%M_%S", time.localtime()))
+    with open(os.path.join(CONF_PATH,outputJson),mode='w') as retJson:
+        json.dump(ret,indent=4,sort_keys=True,fp=retJson)
     print("finish generate %d yamls"%(nodeCount))
     
 
-def getYamls():
-    if not os.path.exists(YAMLS_PATH):
+def getYamls(configFile):
+    if not os.path.exists(configFile):
         print('create conf file frist.')
-        return []
-    yamls = []
-    for y in os.listdir(YAMLS_PATH):
-        if y.endswith('.yaml'):
-            yamls.append(os.path.join(YAMLS_PATH,y))
-    if len(yamls) == 0:
-        print('init conf file frist.')
-        return []
-    return yamls
+        return {}
+    with open(configFile) as confJson:
+        ret = json.load(confJson)
+        return ret
 
 
 def getPidFromFile(pidfile):
@@ -94,57 +94,54 @@ def getPidFromFile(pidfile):
     return pid
 
 
-def killBees():
-    yamls = getYamls()
-    for bee in yamls:
-        temp = open(bee,encoding='utf-8')
-        bee_yaml = yaml.load(temp.read())
-        temp.close()
-        data_dir = bee_yaml['data-dir']
-        pidfile = data_dir + '/pid.txt'
+def killBees(configFile):
+    bees = getYamls(configFile)
+    cnt = 0
+    for bee in bees['peers']:
+        data_dir = bee['data-dir']
+        pidfile = os.path.join(data_dir , 'pid.txt')
         pid = getPidFromFile(pidfile)
         if pid != -1:
+            cnt += 1
             os.popen('kill -9 '+str(pid))
         
-    print("close bee %d all"%(len(yamls)))
+    print("peers count = %d,kill count = %d"%(len(bees['peers'],cnt)))
 
 
-def startBees():
-    yamls = getYamls()
+def startBees(configFile):
+    bees = getYamls(configFile)
 
-    bee_sh = "nohup bee start --config {config_file:s} >> {output_file:s} 2>&1 < /dev/null & echo $! > {pidfile:s}"
+    bee_sh = "nohup bee start --config {config_file:s} > {output_file:s} 2>&1 < /dev/null & echo $! > {pidfile:s}"
     
-    for bee in yamls:
-        temp = open(bee,encoding='utf-8')
-        bee_yaml = yaml.load(temp.read())
-        temp.close()
-        config_file = bee_yaml['config']
-        data_dir = bee_yaml['data-dir']
-        output_file = data_dir + '/output.log'
-        pidfile = data_dir + '/pid.txt'
+    for bee in bees['peers']:
+        config_file = bee['config']
+        data_dir = bee['data-dir']
+        output_file = os.path.join(data_dir,'output.log')
+        pidfile = os.path.join(data_dir,'pid.txt')
         if getPidFromFile(pidfile) != -1 : continue
         if not os.path.exists(data_dir): os.makedirs(data_dir)
-        shutil.copy(bee,config_file)
+        with open(config_file,mode='w') as conFile:
+            yaml.dump(bee,conFile)
         excute_bee_sh = bee_sh.format(config_file=config_file,output_file=output_file,pidfile=pidfile)
         ret = os.popen(excute_bee_sh)
-        print(excute_bee_sh)
         print(ret.read())
-        print(config_file)
-        print()
         ret.close()
+        print(excute_bee_sh)
+        print()
 
-    print("start bee %d all"%(len(yamls)))
+    print("start bee %d all"%(len(bees['peers'])))
 
 
 def printHelp():
     print('Usage run_bee.py [OPTION]')
     print()
-    print('  -c, --create\tcreate N peers conf')
-    print('  -k, --kill\tkill all peers')
-    print('  -s, --start\tstart all peers')
+    print('  -c N DATA_DIR, --create     create N peers conf,base DATA_DIR')
+    print('  -k PATH, --kill             kill peers whit config file')
+    print('  -s PATH, --start            start peers whit config file')
+    print('  -h, --help                  show this page')
     print()
     print('Examples:')
-    print('  run_bee.py -c 100\tcreate 100 peers config files')
+    print('  run_bee.py -c 100 /data/  create 100 peers config files data path is /data/')
     print()
     print('Author:')
     print(' Fish Deng')
@@ -152,30 +149,61 @@ def printHelp():
 
 
 def main(argv):
-    import getopt
-    try:
-        opts, args = getopt.getopt(argv,"hc:sk",["help","create","start","kill"])
-    except getopt.GetoptError:
+    base_cmd = [
+        ('-c','--create'),
+        ('-k','--kill'),
+        ('-s','--start'),
+        ('-h','--help'),
+    ]
+
+    if len(argv) == 0:
         printHelp()
         sys.exit(1)
-    if len(opts) == 0:
+    
+    findCmd = False
+    for cmd in base_cmd:
+        if argv[0] in cmd:
+            findCmd = True
+            break
+
+    if not findCmd:
         printHelp()
-        sys.exit()
-    for opt,arg in opts:
-        if opt in ('-h','--help'):
+        sys.exit(1)
+    
+    if argv[0] in base_cmd[0]:
+        #create
+        try:
+            cnt = int(argv[1])
+            path = argv[2] if len(argv) >= 3 else None
+        except:
             printHelp()
-            sys.exit()
-        elif opt in ('-c','--create'):
-            try:
-                arg = int(arg)
-                mkBeeDataFiles(arg)
-            except:
-                printHelp()
+            sys.exit(2)
+        mkBeeDataFiles(nodeCount=cnt,dataPath=path)
+    elif argv[0] in base_cmd[1]:
+        #kill
+        try:
+            configFile = argv[1]
+            if not os.path.exists(configFile):
+                print("%s is not exists!" %(configFile))
                 sys.exit(2)
-        elif opt in ('-s','--create'):
-            startBees()
-        elif opt in ('-k','--kill'):
-            killBees()
+        except:
+            printHelp()
+            sys.exit(2)
+        killBees(configFile=configFile)
+    elif argv[0] in base_cmd[2]:
+        #start
+        try:
+            configFile = argv[1]
+            if not os.path.exists(configFile):
+                print("%s is not exists!" %(configFile))
+                sys.exit(2)
+        except:
+            printHelp()
+            sys.exit(2)
+        startBees(configFile=configFile)
+    elif argv[0] in base_cmd[3]:
+        #help
+        printHelp()
 
 
 if __name__ == '__main__':
