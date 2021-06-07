@@ -7,7 +7,9 @@ import sys
 import json
 from GLOBAL import *
 
-yaml._warnings_enabled['YAMLLoadWarning'] = False
+
+if hasattr(yaml,'_warnings_enabled'):
+    yaml._warnings_enabled['YAMLLoadWarning'] = False
 
 def getPublicIp():
     insideUrl = "http://ip.42.pl/raw"
@@ -76,7 +78,7 @@ def getYamls(configFile):
 
 def getPidFromFile(pidfile):
     #check pid is running
-    checkcmd = 'ps -p {pid:d}|grep {pid:d}'
+    checkcmd = 'ps -p {:d}|grep {:d}'
     if os.path.exists(pidfile):
         with open(pidfile) as pfile:
             pid = pfile.read()
@@ -85,7 +87,7 @@ def getPidFromFile(pidfile):
             except:
                 pid = -1
         if pid != -1:
-            ret = os.popen(checkcmd.format(checkcmd.format(pid,pid)))
+            ret = os.popen(checkcmd.format(pid,pid))
             if not ret.read().__contains__(str(pid)):
                 pid = -1
     else:
@@ -105,7 +107,7 @@ def killBees(configFile):
             cnt += 1
             os.popen('kill -9 '+str(pid))
         
-    print("peers count = %d,kill count = %d"%(len(bees['peers'],cnt)))
+    print("peers count = %d,kill count = %d"%(len(bees['peers']),cnt))
 
 
 def startBees(configFile):
