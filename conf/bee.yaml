@@ -5,9 +5,11 @@ full-node: true
 password: "ZdORZ1N71NcWoT5NMUbSQEnHL-gv360q"
 swap-enable: true
 swap-endpoint: wss://goerli.infura.io/ws/v3/41dc108a787a43e58268d088f35b2654
+swap-deployment-gas-price: "1000000000000"
 swap-initial-deposit: 10000000000000000
 swap-deployment-gas-price: "1000000000000"
 welcome-message: "dpbee"
+
 #remeber this is config the all peers,you should modify for everyone pc
 startPort: 1633
 peers:
