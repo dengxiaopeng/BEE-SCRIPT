@@ -76,7 +76,7 @@ def listAllUncashed(configFile):
             try:
                 rep = requests.get(get_uncashed_amount.format(api,p))
                 amount = rep.json()['uncashedAmount']
-                ret.append(p,amount)
+                ret.append((p,amount))
                 cnt += 1
                 totalAmount += amount
             except:
@@ -96,7 +96,7 @@ def cashoutall(configFile):
         for p in peers:
             try:
                 rep = requests.post(cashout_url.format(api,p))
-                ret.append({p,rep.json()['transactionHash']})
+                ret.append((p,rep.json()['transactionHash']))
             except:
                 pass
     print(json.dumps(ret,indent=4))
