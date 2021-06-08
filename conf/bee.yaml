@@ -11,8 +11,5 @@ welcome-message: "dpbee"
 startPort: 1633
 peers:
     -
-        count: 2
+        count: 4
         data-dir: /data
-    -
-        count: 5
-        data-dir: /data/data1

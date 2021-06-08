@@ -93,11 +93,21 @@ def getYamls(configFile):
     if not os.path.exists(configFile):
         print('create conf file frist.%s is not exists' % configFile)
         return {}
+    
+    files = []
     if os.path.isdir(configFile):
-        print('%s is dir,not a configure file.' % configFile)
-        return {}
-    with open(configFile) as confJson:
-        ret = json.load(confJson)
+        for f in os.listdir(configFile):
+            if not (f.startswith("bee") and f.endswith(".json")):
+                continue
+            files.append(os.path.join(configFile,f))
+    else:
+        files.append(configFile)
+    
+    ret = []
+    for f in files:
+        with open(f) as confJson:
+            for cfs in json.load(confJson):
+                ret.append(cfs)
     return ret
 
 
