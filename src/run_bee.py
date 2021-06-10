@@ -53,7 +53,7 @@ def mkBeeDataFiles():
             print("check peers configure is in bee.yaml.")
             sys.exit(2)
         peers = temp.pop("peers")
-        startPort = getYamlValue("startPort",temp,1633)
+        startPort = temp.pop("startPort")
 
         api_addr = startPort
         p2p_addr = api_addr + 1

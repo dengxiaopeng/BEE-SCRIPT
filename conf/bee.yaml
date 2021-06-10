@@ -5,7 +5,6 @@ full-node: true
 password: "ZdORZ1N71NcWoT5NMUbSQEnHL-gv360q"
 swap-enable: true
 swap-endpoint: wss://goerli.infura.io/ws/v3/41dc108a787a43e58268d088f35b2654
-swap-deployment-gas-price: "1000000000000"
 swap-initial-deposit: 10000000000000000
 welcome-message: "dpbee"
 
@@ -13,5 +12,17 @@ welcome-message: "dpbee"
 startPort: 1633
 peers:
     -
-        count: 6
-        data-dir: /data/data
+        count: 4
+        data-dir: /data/data0
+    -
+        count: 4
+        data-dir: /data/data1
+    -
+        count: 4
+        data-dir: /data/data2
+    -
+        count: 4
+        data-dir: /data/data3
+    -
+        count: 4
+        data-dir: /data/data4
