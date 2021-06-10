@@ -147,10 +147,20 @@ def killBees(configFile):
     print("peers count = %d,kill count = %d"%(len(bees['peers']),cnt))
 
 
+def buildRunCmd(bee) -> str:
+    formatStr = "--%s %s "
+    ret = ''
+    for k in bee:
+        if k == "config":
+            continue
+        ret += formatStr % (k,bee[k])
+    return ret
+
+
 def startBees(configFile):
     allBees = getYamls(configFile)
 
-    bee_sh = "nohup bee start --config {config_file:s} > {output_file:s} 2>&1 < /dev/null & echo $! > {pidfile:s}"
+    bee_sh = "nohup bee start {config:s}> {output_file:s} 2>&1 < /dev/null & echo $! > {pidfile:s}"
     
     for bees in allBees:
         for bee in bees['peers']:
@@ -160,9 +170,8 @@ def startBees(configFile):
             pidfile = os.path.join(data_dir,'pid.txt')
             if getPidFromFile(pidfile) != -1 : continue
             if not os.path.exists(data_dir): os.makedirs(data_dir)
-            with open(config_file,mode='w') as conFile:
-                yaml.dump(bee,conFile,indent=4)
-            excute_bee_sh = bee_sh.format(config_file=config_file,output_file=output_file,pidfile=pidfile)
+            cmdConfig = buildRunCmd(bee)
+            excute_bee_sh = bee_sh.format(config=cmdConfig,output_file=output_file,pidfile=pidfile)
             ret = os.popen(excute_bee_sh)
             print(ret.read())
             ret.close()
