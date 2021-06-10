@@ -16,11 +16,10 @@ mount /dev/sdd /data/data2
 mount /dev/sde /data/data3
 mount /dev/sdf /data/data4
 
-wget https://github.com/ethersphere/bee/releases/download/v0.6.2/bee_0.6.2_amd64.deb -o ~/bee_0.6.2_amd64.deb
-wget https://github.com/ethersphere/bee-clef/releases/download/v0.4.12/bee-clef_0.4.12_amd64.deb -o ~/bee-clef_0.4.12_amd64.deb
-dpkg -i ~/bee_0.6.2_amd64.deb
-dpkp -i ~/bee-clef_0.4.12_amd64.deb
+dpkg -i bee_0.6.2_amd64.deb
+dpkp -i bee-clef_0.4.12_amd64.deb
 systemclt stop bee
+
 cp -r config/* /etc/bee-clef/
 cp -r files/* /var/lib/bee-clef/
 systemclt restart bee-clef
