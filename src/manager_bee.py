@@ -10,7 +10,10 @@ if __package__ is None:
     sys.path.insert(0, str(DIR.parent))
     __package__ = DIR.name
 
-from .run_bee import getYamls
+try:
+    from .run_bee import *
+except:
+    from run_bee import *
 
 
 def printHelp():
