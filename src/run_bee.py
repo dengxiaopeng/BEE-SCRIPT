@@ -151,7 +151,7 @@ def killBees(configFile):
 
 
 def buildRunCmd(bee) -> str:
-    formatStr = "--%s %s "
+    formatStr = "--%s '%s'g "
     ret = ''
     for k in bee:
         if k == "config":
