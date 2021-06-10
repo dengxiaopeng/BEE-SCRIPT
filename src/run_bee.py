@@ -13,7 +13,12 @@ if __package__ is None:
     sys.path.insert(0, str(DIR.parent))
     __package__ = DIR.name
 
-from .GLOBAL import *
+
+try:
+    from .GLOBAL import *
+except:
+    from GLOBAL import *
+
 
 if hasattr(yaml,'_warnings_enabled'):
     yaml._warnings_enabled['YAMLLoadWarning'] = False
