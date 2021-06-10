@@ -19,12 +19,12 @@ if hasattr(yaml,'_warnings_enabled'):
     yaml._warnings_enabled['YAMLLoadWarning'] = False
 
 def getPublicIp():
-    insideUrl = "http://ip.42.pl/raw"
+    insideUrl = "https://api.ipify.org/?format=json"
     outsideUrl = "http://ifconfig.me/ip"
     
     try:
         ipAddress = requests.get(insideUrl,timeout=2)
-        return ipAddress.text
+        return ipAddress.json()['ip']
     except Exception:
         ipAddress = requests.get(outsideUrl,timeout=2)
         return ipAddress.text

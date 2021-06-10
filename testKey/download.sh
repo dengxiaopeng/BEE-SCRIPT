@@ -16,11 +16,12 @@ mount /dev/sdd /data/data2
 mount /dev/sde /data/data3
 mount /dev/sdf /data/data4
 
+dpkg -i bee-clef_0.4.12_amd64.deb
 dpkg -i bee_0.6.2_amd64.deb
-dpkp -i bee-clef_0.4.12_amd64.deb
-systemclt stop bee
+systemctl stop bee-clef
+systemctl stop bee
 
 cp -r config/* /etc/bee-clef/
 cp -r files/* /var/lib/bee-clef/
-systemclt restart bee-clef
+systemctl start bee-clef
 echo "finish"
